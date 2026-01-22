@@ -47,16 +47,25 @@ function sendWhatsAppMessage($to, $message, $metadata = []) {
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
+    $errno = curl_errno($ch);
     curl_close($ch);
     
-    if ($error) {
-        return ['success' => false, 'error' => $error];
+    if ($error || $errno) {
+        return [
+            'success' => false, 
+            'error' => "cURL Error ($errno): $error",
+            'http_code' => $httpCode
+        ];
     }
+    
+    $decoded = json_decode($response, true);
     
     return [
         'success' => $httpCode >= 200 && $httpCode < 300,
         'http_code' => $httpCode,
-        'response' => json_decode($response, true)
+        'response' => $decoded,
+        'error' => $decoded['error']['message'] ?? ($decoded['message'] ?? 'Unknown error'),
+        'raw' => $response
     ];
 }
 

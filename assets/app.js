@@ -14,14 +14,14 @@ function closeSendModal() {
 }
 
 // Close modal on overlay click
-document.getElementById('sendModal').addEventListener('click', function(e) {
+document.getElementById('sendModal').addEventListener('click', function (e) {
     if (e.target === this) {
         closeSendModal();
     }
 });
 
 // Close modal on Escape key
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         closeSendModal();
     }
@@ -30,38 +30,41 @@ document.addEventListener('keydown', function(e) {
 // Send Message
 async function sendMessage(e) {
     e.preventDefault();
-    
+
     const btn = document.getElementById('sendBtn');
     const btnText = btn.querySelector('.btn-text');
     const btnLoader = btn.querySelector('.btn-loader');
-    
+
     const to = document.getElementById('to').value;
     const message = document.getElementById('message').value;
-    
+
     // Disable button
     btn.disabled = true;
     btnText.style.display = 'none';
     btnLoader.style.display = 'inline';
-    
+
     try {
         const formData = new FormData();
         formData.append('action', 'send');
         formData.append('to', to);
         formData.append('message', message);
-        
+
         const response = await fetch('index.php', {
             method: 'POST',
             body: formData
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             showToast('Ujumbe umetumwa kikamilifu!', 'success');
             closeSendModal();
             refreshMessages();
         } else {
-            showToast(result.error || 'Imeshindikana kutuma ujumbe', 'error');
+            const errorMsg = result.error || result.raw || 'Imeshindikana kutuma ujumbe';
+            const httpCode = result.http_code ? ` (HTTP ${result.http_code})` : '';
+            showToast(errorMsg + httpCode, 'error');
+            console.error('Send error:', result);
         }
     } catch (error) {
         showToast('Kuna tatizo la mtandao', 'error');
@@ -78,14 +81,14 @@ async function refreshMessages() {
     try {
         const formData = new FormData();
         formData.append('action', 'get_messages');
-        
+
         const response = await fetch('index.php', {
             method: 'POST',
             body: formData
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             renderMessages(result.messages);
         }
@@ -97,7 +100,7 @@ async function refreshMessages() {
 // Render Messages
 function renderMessages(messages) {
     const container = document.getElementById('messagesContainer');
-    
+
     if (!messages || messages.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
@@ -113,7 +116,7 @@ function renderMessages(messages) {
         `;
         return;
     }
-    
+
     container.innerHTML = messages.map(msg => `
         <div class="message-card ${msg.direction}">
             <div class="message-avatar">
@@ -129,10 +132,10 @@ function renderMessages(messages) {
                 <div class="message-body">${escapeHtml(msg.body).replace(/\n/g, '<br>')}</div>
                 <div class="message-footer">
                     <span class="message-status ${msg.status}">
-                        ${msg.direction === 'outbound' 
-                            ? (msg.status === 'sent' ? '✓ Imetumwa' : (msg.status === 'delivered' ? '✓✓ Imefika' : '⏳ Inatuma...'))
-                            : '📥 Imepokelewa'
-                        }
+                        ${msg.direction === 'outbound'
+            ? (msg.status === 'sent' ? '✓ Imetumwa' : (msg.status === 'delivered' ? '✓✓ Imefika' : '⏳ Inatuma...'))
+            : '📥 Imepokelewa'
+        }
                     </span>
                 </div>
             </div>
@@ -145,7 +148,7 @@ function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.className = 'toast ' + type + ' show';
-    
+
     setTimeout(() => {
         toast.classList.remove('show');
     }, 4000);
@@ -171,7 +174,7 @@ function timeAgo(datetime) {
     const now = new Date();
     const date = new Date(datetime);
     const diff = Math.floor((now - date) / 1000);
-    
+
     if (diff < 60) return 'Sasa hivi';
     if (diff < 3600) return Math.floor(diff / 60) + ' dakika zilizopita';
     if (diff < 86400) return Math.floor(diff / 3600) + ' saa zilizopita';
@@ -183,7 +186,7 @@ function timeAgo(datetime) {
 setInterval(refreshMessages, 30000);
 
 // Initial animation
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const cards = document.querySelectorAll('.message-card');
     cards.forEach((card, index) => {
         card.style.opacity = '0';
