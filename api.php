@@ -54,20 +54,46 @@ function sendWhatsAppMessage($to, $message, $metadata = []) {
         return [
             'success' => false, 
             'error' => "cURL Error ($errno): $error",
-            'http_code' => $httpCode
+            'http_code' => $httpCode,
+            'debug' => [
+                'url' => $url,
+                'data' => $data,
+            ]
         ];
     }
     
     $decoded = json_decode($response, true);
     
+    // Better error message extraction
+    $errorMessage = 'Unknown error';
+    if ($httpCode === 404) {
+        $errorMessage = $decoded['error']['message'] ?? 'API endpoint not found or Instance not found (HTTP 404)';
+    } elseif ($httpCode === 401) {
+        $errorMessage = 'Invalid API Key (HTTP 401)';
+    } elseif ($httpCode === 403) {
+        $errorMessage = $decoded['error']['message'] ?? 'Access denied (HTTP 403)';
+    } elseif ($httpCode === 400) {
+        $errorMessage = $decoded['error']['message'] ?? 'Bad request (HTTP 400)';
+    } elseif (isset($decoded['error']['message'])) {
+        $errorMessage = $decoded['error']['message'];
+    } elseif (isset($decoded['message'])) {
+        $errorMessage = $decoded['message'];
+    }
+    
     return [
         'success' => $httpCode >= 200 && $httpCode < 300,
         'http_code' => $httpCode,
         'response' => $decoded,
-        'error' => $decoded['error']['message'] ?? ($decoded['message'] ?? 'Unknown error'),
-        'raw' => $response
+        'error' => $httpCode >= 200 && $httpCode < 300 ? null : "$errorMessage (HTTP $httpCode)",
+        'raw' => $response,
+        'debug' => [
+            'url' => $url,
+            'instance_id' => (int) $config['instance_id'],
+            'api_key_prefix' => substr($config['api_key'], 0, 10) . '...',
+        ]
     ];
 }
+
 
 /**
  * Get Messages from local storage
