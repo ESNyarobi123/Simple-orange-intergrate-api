@@ -40,7 +40,8 @@ function sendWhatsAppMessage($to, $message, $metadata = []) {
             'Accept: application/json'
         ],
         CURLOPT_TIMEOUT => 30,
-        CURLOPT_SSL_VERIFYPEER => false
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => 0
     ]);
     
     $response = curl_exec($ch);
