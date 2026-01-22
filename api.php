@@ -20,9 +20,9 @@ function sendWhatsAppMessage($to, $message, $metadata = []) {
     $url = $config['api_url'] . '/messages/send';
     
     $data = [
-        'instance_id' => $config['instance_id'],
+        'instance_id' => (int) $config['instance_id'],
         'to' => $to,
-        'message' => $message
+        'body' => $message
     ];
     
     if (!empty($metadata)) {
